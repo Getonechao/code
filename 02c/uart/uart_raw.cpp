@@ -69,9 +69,16 @@ int uart::uart_enable()
         std::cout<<"[err]: set attr failed !!!\n";
         return -1;
     }
-    /* 4.设置使能标志位为true */
+
+    /* 4.冲刷缓冲区通道 */
+     tcflush(this->fd,TCIOFLUSH);
+
+    /* 5.设置使能标志位为true */
     this->enable_flag=true;
+
+    /* 6.打印配置信息 */
     this->print_setting();
+   
     return 0;
    
 }
@@ -176,7 +183,7 @@ int uart::setAttr(int fd,uint32_t baudrate,uint8_t databits,char parity, uint8_t
 
     /*6.other*/
     new_termios.c_oflag &=~ OPOST; /* Raw output */
-    new_termios.c_iflag &= ~(IXON | IXOFF | IXANY);
+    new_termios.c_iflag &= ~(IXON | IXOFF | IXANY);  /* Software flow control is disabled */
     
     /*7.设置生效 */
     if(tcsetattr(this->fd,TCSANOW,&(new_termios))<0)
@@ -185,6 +192,7 @@ int uart::setAttr(int fd,uint32_t baudrate,uint8_t databits,char parity, uint8_t
         this->uart_close();
         return -1;
     }
+  
 
   return 0;
 }
@@ -314,10 +322,11 @@ int uart::uart_recv(__uint8_t* buf,__uint32_t length)
         return -1;
     }
     //刷新输入队列
-    // tcflush(this->fd,TCIFLUSH);
+    tcflush(this->fd,TCIFLUSH);
     int ret=read(this->fd, buf, length);
     return ret;
 }
+
 
 /*
 * 打印配置信息
