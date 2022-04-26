@@ -14,6 +14,8 @@ private:
     struct termios new_termios;
     struct termios old_termios;
     bool enable_flag=false;
+    int MIN=0;
+    int TIME=0;
 public:
     uart(const char* dev,uint32_t baudrate,uint8_t data_bits,char parity,uint8_t stop_bits);
     ~uart();
@@ -22,6 +24,7 @@ public:
     int uart_recv( __uint8_t* buf,__uint32_t length);
     void uart_close();
 
+    int set_cc(int MIN,int TIME);
     void print_setting();
 private:
     int setAttr(int fd,uint32_t baudrate,uint8_t databits,char parity, uint8_t stopbits);

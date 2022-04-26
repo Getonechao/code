@@ -27,19 +27,19 @@ int uart::uart_enable()
     /* 1. 检查属性是否符合要求 */
     if(baud_adapt(this->baudrate)==-1)
     {
-        std::cout<<"[err]:baudrate is not an exportion\n";
+        std::cout<<"[err]:baudrate is not an expection\n";
         return -1;
     }
     if(this->data_bits!=5&&this->data_bits!=6&&this->data_bits!=7&&this->data_bits!=8)
     {
-        std::cout<<"[err]:data bits is not an exportion\n";
+        std::cout<<"[err]:data bits is not an expection\n";
         return -1;
     }
     if(this->parity!='N'&&this->parity!='n'
      &&this->parity!='E'&&this->parity!='e'
      &&this->parity!='O'&&this->parity!='o')
     {
-        std::cout<<"[err]: parity is not an exportion\n";
+        std::cout<<"[err]: parity is not an expection\n";
         return -1;
     }else{
         if(this->parity=='n'){this->parity='N';}
@@ -48,13 +48,13 @@ int uart::uart_enable()
     }
     if(this->stop_bits!=1&&this->stop_bits!=2)
     {
-        std::cout<<"[err]: stop bits is not an exportion\n";
+        std::cout<<"[err]: stop bits is not an expection\n";
         return -1;
     }
 
     /* 2. 打开串口,获取fd */
-    this->fd=open(this->dev.c_str(), O_RDWR | O_NOCTTY);
-
+    this->fd=open(this->dev.c_str(),O_RDWR | O_NOCTTY | O_NDELAY | O_EXCL);
+    // this->fd=open(this->dev.c_str(),O_RDWR | O_NOCTTY );
     if(this->fd==-1)
     {
         std::cout<<"[err]: open dev[] failed,and can't get a fd !!!\n";
@@ -62,16 +62,17 @@ int uart::uart_enable()
     }
 
     /* 3.设置串口属性 */
-    int ret=setAttr(this->fd,this->baudrate,this->data_bits,this->parity,this->stop_bits);
-    
-    if(ret==-1)
+    int ret1=set_cc(this->MIN,this->TIME); 
+    int ret2=setAttr(this->fd,this->baudrate,this->data_bits,this->parity,this->stop_bits);
+  
+    if(ret1==-1||ret2==-1)
     {
         std::cout<<"[err]: set attr failed !!!\n";
         return -1;
     }
 
     /* 4.冲刷缓冲区通道 */
-     tcflush(this->fd,TCIOFLUSH);
+    //  tcflush(this->fd,TCIOFLUSH);
 
     /* 5.设置使能标志位为true */
     this->enable_flag=true;
@@ -178,8 +179,8 @@ int uart::setAttr(int fd,uint32_t baudrate,uint8_t databits,char parity, uint8_t
 
     /*5. 设置非规范模式(即raw模式)  */
     new_termios.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);;
-    new_termios.c_cc[VMIN]=0;
-    new_termios.c_cc[VTIME]=1;
+    new_termios.c_cc[VMIN]=this->MIN;
+    new_termios.c_cc[VTIME]=this->TIME;
 
     /*6.other*/
     new_termios.c_oflag &=~ OPOST; /* Raw output */
@@ -195,6 +196,20 @@ int uart::setAttr(int fd,uint32_t baudrate,uint8_t databits,char parity, uint8_t
   
 
   return 0;
+}
+
+/*
+*设置c_cc[],MIN、TIME
+*/
+int uart::set_cc(int MIN,int TIME){
+    if(MIN<0||TIME<0)
+    {
+        std::cout<<"[err]:MIN or TIME isn't an expection\n";
+        return -1;
+    }
+    this->MIN=MIN;
+    this->TIME=TIME;
+    return 0;
 }
 
 int uart::baud_adapt(int baudrate){
@@ -309,7 +324,7 @@ int uart::uart_send(const __uint8_t* buf,__uint32_t length)
         return -1;
     }
     //刷新输出队列
-    tcflush(this->fd,TCOFLUSH);
+    // tcflush(this->fd,TCOFLUSH);
     int ret=write(this->fd,buf,length);
     return ret;
 }
@@ -322,7 +337,12 @@ int uart::uart_recv(__uint8_t* buf,__uint32_t length)
         return -1;
     }
     //刷新输入队列
-    tcflush(this->fd,TCIFLUSH);
+    // tcflush(this->fd,TCIFLUSH);
+    /*
+    不应该在read之前，刷新输入队伍，会导致接收不到
+    两个思路：   1. min=0，time=0，不在刷新接收缓冲区
+                2. min=0,time=1,  刷新缓冲区，有0.1s等待时间
+    */
     int ret=read(this->fd, buf, length);
     return ret;
 }

@@ -2,7 +2,7 @@
 #include<unistd.h>
 
 int main(){
-    uart uart("/dev/ttyS1",115200,8,'E',1);
+    uart uart("/dev/ttyS1",115200,8,'N',1);
     if(0==uart.uart_enable())
     {
         uint8_t buf[3];
@@ -12,7 +12,7 @@ int main(){
         
         while(1)
         {
-            
+            sleep(1);
             int ret=uart.uart_recv(buf,3);
             printf("this is %d %x %x %x\n",ret,buf[0],buf[1],buf[2]);
         }
