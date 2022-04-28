@@ -79,7 +79,7 @@ int uart::uart_enable()
 
     /* 6.打印配置信息 */
     this->print_setting();
-   
+    std::cout<<"uart enable OK\n";
     return 0;
    
 }
@@ -147,12 +147,12 @@ int uart::setAttr(int fd,uint32_t baudrate,uint8_t databits,char parity, uint8_t
         new_termios.c_cflag &= ~PARENB;//关闭奇偶位
         break;
     case 'E'://奇
-        new_termios.c_iflag |= (INPCK | ISTRIP);//开启输入奇偶检验检查
+        new_termios.c_iflag |= (INPCK);//开启输入奇偶检验检查
         new_termios.c_cflag |= PARENB;//开启奇偶位
         new_termios.c_cflag &= ~PARODD;//关闭偶位
         break;
     case 'O'://偶
-        new_termios.c_iflag |= (INPCK | ISTRIP);//开启输入奇偶检验检查
+        new_termios.c_iflag |= (INPCK);//开启输入奇偶检验检查
         new_termios.c_cflag|= PARENB;//开启奇偶位
         new_termios.c_cflag |= PARODD;//开启偶位
         break;
@@ -183,9 +183,10 @@ int uart::setAttr(int fd,uint32_t baudrate,uint8_t databits,char parity, uint8_t
     new_termios.c_cc[VTIME]=this->TIME;
 
     /*6.other*/
-    new_termios.c_oflag &=~ OPOST; /* Raw output */
+    new_termios.c_oflag &= ~OPOST; /* Raw output */
     new_termios.c_iflag &= ~(IXON | IXOFF | IXANY);  /* Software flow control is disabled */
-    
+    new_termios.c_iflag &= ~(IUCLC|ICRNL|INLCR|IGNCR);/* 1.关闭input大小写转换 2.禁止CR、LF相互转换 3.不忽略CR、LF*/
+    new_termios.c_oflag &= ~(OLCUC|OCRNL|ONLCR);/* 1.关闭output大小写转换 2.同上*/
     /*7.设置生效 */
     if(tcsetattr(this->fd,TCSANOW,&(new_termios))<0)
     {
