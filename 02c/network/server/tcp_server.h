@@ -226,12 +226,14 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
                             send(socket_temp,sendbuf2,sendbuf_size,0);
                             //delete
                             delete [] sendbuf2;
+                            //break
+                            break;
                         }
                         
                     }
                 }
                 /* 关闭fd */
-                if(done){close(socket_temp);}
+                // if(done){close(socket_temp);}
             }
         }
     }
