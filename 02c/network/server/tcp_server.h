@@ -1,17 +1,19 @@
 #pragma once
-#include<iostream>
+#include <iostream>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/epoll.h>
 #include <fcntl.h>
-
+#include <string.h>
+#include <vector>
+#include <algorithm>
 class tcp_server
 {
 private:
     std::string IP;
     uint16_t PORT;
 
-    int epollfd,serverfd,clientfd;
+    int epollfd,serverfd;
 
     uint16_t conn_num;
 
@@ -27,6 +29,11 @@ public:
     ~tcp_server();
 
     int tcp_enable();
+
+private:
+    int addfd(int epollfd, int fd,bool enable_et);//(Level Triggered)水平触发&&(Edge Triggered)边缘触发
+    int LT_deal(struct epoll_event *events, int count, int epollfd, int serverfd);
+    int ET_deal(struct epoll_event *events, int count, int epollfd, int serverfd);
 };
 
 tcp_server::tcp_server(const char* IP,uint16_t PORT,uint16_t conn_num):IP(IP),PORT(PORT),conn_num(conn_num)
@@ -55,10 +62,7 @@ int tcp_server::tcp_enable(){
     int ret_epoll_create = epoll_create(this->conn_num);
 
     /* 5. epoll_ctl */
-    server_event.events= EPOLLIN;
-    server_event.data.fd=this->serverfd;
-    int ret_epoll_ctl = epoll_ctl(epollfd, EPOLL_CTL_ADD, serverfd, &server_event);
-    fcntl(serverfd, F_SETFL, fcntl(serverfd, F_GETFD, 0)| O_NONBLOCK);
+    this->addfd(epollfd,serverfd,true);//边缘触发
 
     /* 6. while */
     while(1)
@@ -86,13 +90,15 @@ int tcp_server::tcp_enable(){
                 uint16_t conn_port=ntohs(cliaddr.sin_port);
 
                 //将clientfd添加到epoll_wait
-                struct epoll_event conn_event; 
-                conn_event.events= EPOLLIN;
-                conn_event.data.fd=this->serverfd;
-                int ret_epoll_ctl = epoll_ctl(epollfd, EPOLL_CTL_ADD, clientfd, &conn_event);
-                fcntl(clientfd, F_SETFL, fcntl(clientfd, F_GETFD, 0)| O_NONBLOCK);
+                this->addfd(epollfd,clientfd,true);
 
             }
+            /* 8.2 处理客户端发来的消息 */
+            else if ()
+            {
+                
+            }
+            
             
         }
         
@@ -101,3 +107,73 @@ int tcp_server::tcp_enable(){
 
     }
 }
+
+int tcp_server::addfd(int epollfd, int fd,bool enable_et)
+{
+    struct epoll_event event;
+	event.data.fd = fd;
+	event.events  = EPOLLIN;//(Level Triggered)水平触发
+	if(enable_et){
+		event.events |= EPOLLET;//(Edge Triggered)边缘触发
+	}
+    int ret_epoll_ctl = epoll_ctl(epollfd, EPOLL_CTL_ADD, serverfd, &server_event);
+    fcntl(serverfd, F_SETFL, fcntl(serverfd, F_GETFD, 0)| O_NONBLOCK);
+
+    return 0;
+}
+
+int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int serverfd)
+{
+    
+        /* 8.事件触发 */
+        for (size_t i = 0; i < count; i++)
+        {
+            int socket_temp=events[i].data.fd;
+            
+            /* 8.1 连接事件 */
+            if(socket_temp==this->serverfd)
+            {
+                socklen_t client_addrLength= sizeof(struct sockaddr_in);
+                int clientfd = accept( serverfd, ( struct sockaddr* )&cliaddr, &client_addrLength);
+
+                std::string conn_ip= inet_ntoa(cliaddr.sin_addr);
+                uint16_t conn_port=ntohs(cliaddr.sin_port);
+
+                //将clientfd添加到epoll_wait
+                this->addfd(epollfd,clientfd,true);
+
+            }
+            /* 8.2 处理客户端发来的消息 */
+            else if (events[i].events & EPOLLIN)
+            {
+                uint8_t buf[1024];
+                std::vector<uint8_t> buf_tatol;
+
+                /* 边缘触发，循环读取缓冲区中内容，直到errno == EAGAIN */
+                while (true)
+                {
+                    memset(buf, 0, 1024);
+                    int ret_number=recv(socket_temp,buf,1024,0);
+                    if(ret_number>0)
+                    { 
+                        /* 汇总 */
+                        std::copy_n(buf,ret_number,buf_tatol.end());
+                    }else{
+                        if((errno == EAGAIN) || (errno == EWOULDBLOCK)){
+                            printf("EAGAIN\n");
+                            continue;
+					    }
+
+                        //deal
+					    close(socket_temp);
+					    break;
+                    }
+                }
+                
+                
+            }
+            
+            
+        }
+}
+
