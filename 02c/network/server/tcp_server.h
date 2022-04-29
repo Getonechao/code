@@ -8,6 +8,12 @@
 #include <string.h>
 #include <vector>
 #include <algorithm>
+#include <map>
+
+struct IP_PORT_t{
+    char* IP;
+    uint16_t port;
+};
 
 class tcp_server
 {
@@ -16,14 +22,19 @@ private:
     uint16_t PORT;
 
     int epollfd,serverfd;
-
+    
+    //服务器允许最大连接数量
     uint16_t conn_num;
 
     struct sockaddr_in cliaddr, servaddr;
+    
+    //存储连接服务器的<fd -- IP：port>
+    std::map<uint16_t,struct IP_PORT_t> IP_POOl; 
 
     struct epoll_event server_event;
 
     bool enable_flag=false;
+    
 
     
 public:
@@ -32,7 +43,7 @@ public:
 
     int tcp_enable();
 
-    int data_deal(const std::vector<uint8_t>& recvbuf,std::vector<uint8_t>& sendbuf, bool& send_yes );
+    int data_deal(const std::vector<uint8_t>& recvbuf,std::vector<uint8_t>& sendbuf, bool& send_yes ,const char* IP,const uint16_t& port);
 
 private:
     int addfd(int epollfd, int fd,bool enable_et);//(Level Triggered)水平触发&&(Edge Triggered)边缘触发
@@ -56,6 +67,8 @@ int tcp_server::tcp_enable(){
     servaddr.sin_port = htons(this->PORT);
     servaddr.sin_addr.s_addr = inet_addr(this->IP.c_str());
     this->serverfd = socket(PF_INET, SOCK_STREAM, 0);
+    int mw_optval = 1;
+    setsockopt(this->serverfd, SOL_SOCKET, SO_REUSEADDR, (char *)&mw_optval,sizeof(mw_optval));
 
     /*2. bind*/
     int ret_bind = bind(this->serverfd , (struct sockaddr *)&servaddr, sizeof(servaddr));
@@ -91,6 +104,7 @@ int tcp_server::tcp_enable(){
 
         this->ET_deal(client_event,count,this->epollfd,this->serverfd);
     }
+    return 0;
 }
 
 int tcp_server::addfd(int epollfd, int fd,bool enable_et)
@@ -136,18 +150,26 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
             socklen_t client_addrLength= sizeof(struct sockaddr_in);
             int clientfd = accept( serverfd, ( struct sockaddr* )&cliaddr, &client_addrLength);
 
-            std::string conn_ip= inet_ntoa(cliaddr.sin_addr);
-            uint16_t conn_port=ntohs(cliaddr.sin_port);
-            std::cout<<conn_ip<<":"<<conn_port<<std::endl;
             //将clientfd添加到epoll_wait
             this->addfd(epollfd,clientfd,true);
+
+            //存到IP_POOL
+            struct IP_PORT_t IP_PORT{
+                .IP= inet_ntoa(cliaddr.sin_addr),
+                .port=ntohs(cliaddr.sin_port)
+            } ;
+            this->IP_POOl[clientfd]=IP_PORT;
 
         }
         /* 8.2 处理客户端发来的消息 */
         else if (events[i].events & EPOLLIN)
-        {
+        {   
+            //recv buf
             uint8_t buf[1024];
             std::vector<uint8_t> buf_tatol;
+            // ip:port
+            // std::string conn_ip= inet_ntoa(cliaddr.sin_addr);
+            // uint16_t conn_port=ntohs(cliaddr.sin_port);
 
             /* 边缘触发，循环读取缓冲区中内容，直到errno == EAGAIN */
             while (true)
@@ -209,8 +231,22 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
                 {
                     std::vector<uint8_t> sendbuf;
                     bool send_yes=false;
+                    //根据fd查询已经连接的IP：port
+                    auto it=this->IP_POOl.find(socket_temp);
+                    const char* ip_cur;
+                    uint16_t port_cur;
+                    if(it!=this->IP_POOl.end())
+                    {
+                       ip_cur=it->second.IP;
+                       port_cur=it->second.port;
+
+                    }else{
+                        ip_cur="127.0.0.1";
+                        port_cur=0;
+                    }
+                                          
                     //deal
-                    this->data_deal(buf_tatol,sendbuf,send_yes);
+                        this->data_deal(buf_tatol,sendbuf,send_yes,ip_cur,port_cur);
                     if(send_yes)
                     {
                         int sendbuf_size=sendbuf.size();
@@ -232,21 +268,48 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
                 }
                 /* 关闭fd */
                 if(done){
+                    
                     close(socket_temp); 
                     std::cout<<"close fd="<<socket_temp<<"\n"<<std::endl;
+                    //删除IP_POOL中键fd：socket_temp
+                    auto it = IP_POOl.find(socket_temp);
+                    if(it!=IP_POOl.end())
+                    {
+                        std::cout<<"erase IP_POOL\n"<<std::endl;
+                        this->IP_POOl.erase(it);
+                    }
                     break;
                     }
 
             }
         }
     }
+    return 0;
 }
 
- int tcp_server::data_deal(const std::vector<uint8_t>& recvbuf,std::vector<uint8_t>& sendbuf, bool& send_yes )
+ int tcp_server::data_deal(const std::vector<uint8_t>& recvbuf,std::vector<uint8_t>& sendbuf, bool& send_yes ,const char* IP,const uint16_t& port)
  {
+     /* 开启回复 */
      send_yes=true;
-     sendbuf.push_back(254);
-     sendbuf.push_back(45);
+     {
+        sendbuf.push_back(254);
+        sendbuf.push_back(45);
+        printf("%d\n",port );
+        std::cout<<"from "<<IP<<":"<<port<<std::endl;
+         for (auto &&i : recvbuf)
+         {
+             std::cout<<std::hex<<+i<<" ";
+         }
+         std::cout<<"\n";
+            
+     }
+  
+    /* 关闭回复 */
+    // send_yes=false;
+    // {
+    //     //do something
+    // }
+
      return 0;
  }
 
