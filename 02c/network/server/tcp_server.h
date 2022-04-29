@@ -79,7 +79,7 @@ int tcp_server::tcp_enable(){
     while(1)
     {
         /* 8.epoll_wait */
-        std::cout<<"1\n";
+        std::cout<<"while(1) begin.....\n";
         int count = epoll_wait(this->epollfd, client_event, this->conn_num, -1);//永久阻塞
         std::cout<<"count="<<count<<" serverfd:"<<this->serverfd<<" client_event:"<<client_event[0].data.fd<<std::endl;
 
@@ -146,7 +146,6 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
         /* 8.2 处理客户端发来的消息 */
         else if (events[i].events & EPOLLIN)
         {
-            std::cout<<"message\n";
             uint8_t buf[1024];
             std::vector<uint8_t> buf_tatol;
 
@@ -176,7 +175,7 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
                 int ret_number=recv(socket_temp,buf,1024,0);
 
 
-                    //1. =0 连接关闭
+                //1. =0 连接关闭
                 if(ret_number==0)
                 {
                     done=true;
@@ -186,7 +185,6 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
                 if(ret_number<0){
                     //如果读取不到数据，返回一个EAGIN错误
                     if((errno == EAGAIN) || (errno == EWOULDBLOCK)){
-                        done=true;
                         over=true;
                     }else{
                         done=true;
@@ -206,7 +204,7 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
                 }
 
 
-
+                //4. 处理.....
                 if(over)
                 {
                     std::vector<uint8_t> sendbuf;
@@ -233,7 +231,12 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
                     }
                 }
                 /* 关闭fd */
-                // if(done){close(socket_temp);}
+                if(done){
+                    close(socket_temp); 
+                    std::cout<<"close fd="<<socket_temp<<"\n"<<std::endl;
+                    break;
+                    }
+
             }
         }
     }
