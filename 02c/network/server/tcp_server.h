@@ -67,8 +67,8 @@ int tcp_server::tcp_enable(){
     servaddr.sin_port = htons(this->PORT);
     servaddr.sin_addr.s_addr = inet_addr(this->IP.c_str());
     this->serverfd = socket(PF_INET, SOCK_STREAM, 0);
-    int mw_optval = 1;
-    setsockopt(this->serverfd, SOL_SOCKET, SO_REUSEADDR, (char *)&mw_optval,sizeof(mw_optval));
+    int opt = 1;
+    setsockopt(this->serverfd, SOL_SOCKET, SO_REUSEADDR, (char *)&opt,sizeof(opt));
 
     /*2. bind*/
     int ret_bind = bind(this->serverfd , (struct sockaddr *)&servaddr, sizeof(servaddr));
@@ -205,7 +205,7 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
 
                 //2. <0 出错 对非阻塞socket而言，EAGAIN不是一种错误。在VxWorks和Windows上，EAGAIN的名字叫做EWOULDBLOCK。
                 if(ret_number<0){
-                    //如果读取不到数据，返回一个EAGIN错误
+                    //如果数据读取完毕，没有数据可读，返回一个EAGIN错误
                     if((errno == EAGAIN) || (errno == EWOULDBLOCK)){
                         over=true;
                     }else{
@@ -257,7 +257,7 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
                             //copy
                             std::copy_n(sendbuf.begin(),sendbuf_size,sendbuf2);
                             //send
-                            send(socket_temp,sendbuf2,sendbuf_size,0);
+                            int ret_send=send(socket_temp,sendbuf2,sendbuf_size,0);
                             //delete
                             delete [] sendbuf2;
                             //break
