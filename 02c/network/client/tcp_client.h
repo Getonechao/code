@@ -14,6 +14,8 @@ private:
     bool connect_flag=false;//连接是否存在
 public:
     tcp_client(const char* IP,const uint16_t port);
+    tcp_client(const tcp_client&)=delete;
+    tcp_client& operator=(const tcp_client&)=delete;
     ~tcp_client();
     void tcp_socket();
     bool tcp_connect(const char* IP,const uint16_t port);
