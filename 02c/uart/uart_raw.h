@@ -26,6 +26,12 @@ public:
 
     int set_cc(int MIN,int TIME);
     void print_setting();
+    
+    //CRC校验
+public:
+    uint16_t crc16_modbus(uint8_t *data, uint16_t length);
+    uint16_t crc16_usb(uint8_t *data, uint16_t length);
+
 private:
     int setAttr(int fd,uint32_t baudrate,uint8_t databits,char parity, uint8_t stopbits);
     int baud_adapt(int baudrate);

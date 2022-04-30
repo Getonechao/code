@@ -27,22 +27,24 @@ int main(){
         // }
 
         /*2. read测试 */
-        uint8_t buf[256];
-        while(1)
-        {
-            sleep(1);
-             memset(buf,0,256);
-            int ret=uart.uart_recv(buf,256);
-            if(ret>0){
-                for(int i=0;i<256;i++)
-                {
-                    printf("%x ",buf[i]);
-                }
-                printf("\n");
-            }
-       
-        }
-       
+        // uint8_t buf[256];
+        // while(1)
+        // {
+        //     sleep(1);
+        //      memset(buf,0,256);
+        //     int ret=uart.uart_recv(buf,256);
+        //     if(ret>0){
+        //         for(int i=0;i<256;i++)
+        //         {
+        //             printf("%x ",buf[i]);
+        //         }
+        //         printf("\n");
+        //     }
+        // }
+
+        uint8_t buf[5]={0x10,0x20,0x30,0x40,0x50};
+        uint16_t ret=uart.crc16_usb(buf,5);
+        std::cout<<std::hex<<ret<<std::endl;
     }
     return 0;
 }
