@@ -18,6 +18,8 @@ private:
     int TIME=0;
 public:
     uart(const char* dev,uint32_t baudrate,uint8_t data_bits,char parity,uint8_t stop_bits);
+    uart(const uart& )=delete;
+    uart& operator=(const uart&)=delete;
     ~uart();
     int uart_enable();
     int uart_send(const __uint8_t* buf,__uint32_t length);
