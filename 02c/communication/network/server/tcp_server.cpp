@@ -223,7 +223,7 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
 			    break;
 			}
                         
-                    }
+                    }else{ break;}
                 }
                 /* client connect 关闭fd */
                 if(done){
