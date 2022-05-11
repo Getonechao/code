@@ -219,11 +219,13 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
                             delete [] sendbuf2;
                             //break
                             break;
-                        }
+                        }esle{
+			    break;
+			}
                         
                     }
                 }
-                /* 关闭fd */
+                /* client connect 关闭fd */
                 if(done){
                     
                     close(socket_temp); 
