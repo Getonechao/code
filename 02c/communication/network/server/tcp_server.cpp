@@ -122,8 +122,8 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
         else if (events[i].events & EPOLLIN)
         {   
             //recv buf
-            uint8_t buf[1024];
-            std::vector<uint8_t> buf_tatol;
+            uint8_t recvbuf_temp[1024];
+            std::vector<uint8_t> recvbuf;
             // ip:port
             // std::string conn_ip= inet_ntoa(cliaddr.sin_addr);
             // uint16_t conn_port=ntohs(cliaddr.sin_port);
@@ -134,7 +134,7 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
                 bool done=false;//关闭fd
                 bool over=false;//接收成功
 
-                memset(buf, 0, 1024);
+                memset(recvbuf_temp, 0, 1024);
 
                 /*
                 *返回值:
@@ -151,7 +151,7 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
                 *                                        ENOTCONN：与面向连接关联的套接字尚未被连接上 
                 *                                        ENOTSOCK：sock索引的不是套接字 当返回值是0时，为正常关闭连接；
                 */
-                int ret_number=recv(socket_temp,buf,1024,0);
+                int ret_number=recv(socket_temp,recvbuf_temp,1024,0);
 
 
                 //1. =0 连接关闭
@@ -177,7 +177,7 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
                     /* 汇总 */
                     for (size_t i = 0; i < ret_number; i++)
                     {
-                        buf_tatol.push_back(buf[i]);
+                        recvbuf.push_back(recvbuf_temp[i]);
                     }
                     std::cout<<"ret_number:"<<ret_number<<std::endl;
                 }
@@ -202,26 +202,28 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
                         port_cur=0;
                     }
                                           
-                    //deal
-                        this->data_deal(buf_tatol,sendbuf,send_yes,ip_cur,port_cur);
+                    /********************************* deal ************************************/
+                        this->data_deal(recvbuf,sendbuf,send_yes,ip_cur,port_cur);
+                    /***************************************************************************/
+
+
                     if(send_yes)
                     {
                         int sendbuf_size=sendbuf.size();
+                        //如果有要发送的数据
                         if(sendbuf_size>0)
                         {
                             //new
-                            uint8_t* sendbuf2=new uint8_t[sendbuf_size];
+                            uint8_t* sendbuf_temp=new uint8_t[sendbuf_size];
                             //copy
-                            std::copy_n(sendbuf.begin(),sendbuf_size,sendbuf2);
+                            std::copy_n(sendbuf.begin(),sendbuf_size,sendbuf_temp);
                             //send
-                            int ret_send=send(socket_temp,sendbuf2,sendbuf_size,0);
+                            int ret_send=send(socket_temp,sendbuf_temp,sendbuf_size,0);
                             //delete
-                            delete [] sendbuf2;
+                            delete [] sendbuf_temp;
                             //break
                             break;
-                        }esle{
-			    break;
-			}
+                        }else{break;}
                         
                     }else{ break;}
                 }
@@ -248,26 +250,19 @@ int tcp_server::ET_deal(struct epoll_event *events, int count, int epollfd, int 
 
  int tcp_server::data_deal(const std::vector<uint8_t>& recvbuf,std::vector<uint8_t>& sendbuf, bool& send_yes ,const char* IP,const uint16_t& port)
  {
-     /* 开启回复 */
-     send_yes=true;
+    
+     for (auto &&i : recvbuf)
      {
-        sendbuf.push_back(254);
-        sendbuf.push_back(45);
-        printf("%d\n",port );
-        std::cout<<"from "<<IP<<":"<<port<<std::endl;
-         for (auto &&i : recvbuf)
-         {
-             std::cout<<std::hex<<+i<<" ";
-         }
-         std::cout<<"\n";
-            
+         std::cout<<i<<std::endl;
      }
-  
-    /* 关闭回复 */
-    // send_yes=false;
-    // {
-    //     //do something
-    // }
-
+     sendbuf.push_back(245);
+     
+     /* 是否开启回复 */
+    if(true)
+    {
+        send_yes=true;
+    }else{
+        send_yes=false;
+    }
      return 0;
  }
