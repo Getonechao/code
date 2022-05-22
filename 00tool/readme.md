@@ -7,3 +7,7 @@
 ## init
 - 显示一些初始化信息
 
+## Xtox
+- hex to x
+- x to hex
+
