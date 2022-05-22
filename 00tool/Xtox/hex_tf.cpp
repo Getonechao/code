@@ -1,4 +1,4 @@
-#include "data_tf.h"
+#include "hex_tf.h"
 #include<stdint.h>
 
 // uint16_t uint16_t2bits(uint16_t hex){
@@ -95,7 +95,7 @@ union tf_8byte
 
 
 /* uint8数组-->float32*/
-_Float32 hex_to_float32(uint8_t* array,const int mode)
+float hex_to_float32(uint8_t* array,const int mode)
 {
     union tf_4byte ret;
 

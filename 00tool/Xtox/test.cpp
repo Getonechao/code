@@ -1,17 +1,20 @@
  #include "hex_tf.h"
 #include<iostream>
+#include<vector>
 
 int main()
 {   
     // 1-1  uint8-->float32
-    // {
-    //     //10.501 big
-    //     uint8_t array[4]={0x41,0x28,0x04,0x18};
-    //     //10.501 small
-    //     // uint8_t array[4]={0x18,0x04,0x28,0x41};
-    //     float ret= hex_to_float32(array,2);
-    //     std::cout<<ret<<std::endl;
-    // }
+    {
+        //10.501 big
+        // uint8_t array[4]={0x41,0x28,0x04,0x18};
+        //10.501 small
+        // uint8_t array[4]={0x18,0x04,0x28,0x41};
+
+        std::vector<uint8_t> array={0x41,0x28,0x04,0x18};
+        float ret= hex_to_float32(array.data(),2);
+        std::cout<<ret<<std::endl;
+    }
 
     //1-2 float32-->uint8
     // {

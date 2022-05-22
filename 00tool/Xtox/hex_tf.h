@@ -5,7 +5,7 @@
 #include<stdint.h>
 
 //float
-float hex_to_float32(u_int8_t* array,const int mode);
+float hex_to_float32(uint8_t* array,const int mode);
 
 void float32_to_hex( float number,uint8_t* array,uint16_t length,const int mode);
 
