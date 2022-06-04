@@ -38,7 +38,7 @@ public:
 
     int tcp_enable();
 
-    int data_deal(const std::vector<uint8_t>& recvbuf,std::vector<uint8_t>& sendbuf, bool& send_yes ,const char* IP,const uint16_t& port);
+    int data_deal(const std::vector<uint8_t>& recvbuf,std::vector<uint8_t>& sendbuf,bool& done,bool& send_yes ,const char* IP,const uint16_t& port);
 
 private:
     int addfd(int epollfd, int fd,bool enable_et);//(Level Triggered)水平触发&&(Edge Triggered)边缘触发
