@@ -45,6 +45,7 @@
         "streambuf": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "termios.h": "c"
+        "termios.h": "c",
+        "map": "cpp"
     }
 }
