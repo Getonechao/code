@@ -46,6 +46,12 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "termios.h": "c",
-        "map": "cpp"
+        "map": "cpp",
+        "chrono": "cpp",
+        "condition_variable": "cpp",
+        "ctime": "cpp",
+        "ratio": "cpp",
+        "mutex": "cpp",
+        "thread": "cpp"
     }
 }
